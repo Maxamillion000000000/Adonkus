@@ -5,190 +5,183 @@ window.onload = function () {
     var ctx = c.getContext("2d");
     var x = 40;
     var y = 50;
-    var vx = 1;
-    var vy = 1;
+    var vx = 3;
+    var vy = 3;
     var game = {
         player1Score: 0,
         player2Score: 0,
         remainingTime: 60000,
         startTime: undefined,
         endTime: undefined,
-        init: function(){
+        init: function () {
             player1Score = 0;
             player2Score = 0;
             this.startTime = new Date();
-            this.endTime = new Date(this.startTime.getTime() + 60*1000);
+            this.endTime = new Date(this.startTime.getTime() + 60 * 1000);
             this.remainingTime = this.endTime.getTime() - this.startTime.getTime()
         },
-        getRemainingTime: function(){
-        var currentTime = new Date();
-        this.remainingTime = this.endTime.getTime() - currentTime;
+        getRemainingTime: function () {
+            var currentTime = new Date();
+            this.remainingTime = this.endTime.getTime() - currentTime;
         },
-        endGameCheck: function(){
-            if (this.remainingTime<=0){
-                this.isOver = true; 
-            }     
+        endGameCheck: function () {
+            if (this.remainingTime <= 0) {
+                this.isOver = true;
+            }
         },
-        updateUI: function(){
+        loadStage: function () {
+
+        },
+        updateUI: function () {
             ctx.font = "30px Helvetica";
             ctx.fillStyle = player1.color;
-            ctx.fillText( "Player 1: " + this.player1Score, 10,10+30 );
+            ctx.fillText("Player 1: " + this.player1Score, 10, 10 + 30);
             ctx.fillStyle = player2.color;
-            ctx.fillText( "Player 2: " + this.player2Score, 10,10+60 );
+            ctx.fillText("Player 2: " + this.player2Score, 10, 10 + 60);
             ctx.fillStyle = "White";
-            ctx.fillText( "T-Minus: " + Math.floor(this.remainingTime/1000), c.width/2,10+30 );
+            ctx.fillText("T-Minus: " + Math.floor(this.remainingTime / 1000), c.width / 2, 10 + 30);
         }
     }
     var background = {
-        color: "#000000", 
+        color: "#000000",
         width: c.width,
         height: c.height,
         x: 0,
         y: 0,
-        render: function(){
+        render: function () {
             ctx.fillStyle = this.color;
             ctx.fillRect(this.x, this.y, this.width, this.height)
         }
     }
+    class Vector2d {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+    class Box2d {
+        constructor (topLeft, bottomRight) {
+            this.topLeft = topLeft;
+            this.bottomRight = bottomRight;
+        }
+        containsPoint(point) {
+            var isColliding = false;
+            if (point.x >= this.topLeft.x && point.x <= this.bottomRight.x && point.y >= this.topLeft.y && point.y <= this.bottomRight.y) {
+                isColliding = true
+            }
+            console.log("contains point( " + point.x + ", " + point.y + ") " + isColliding) 
+            return isColliding; 
+        }
+        
+        overlapsBox(otherBox){
+            var isOverlapping = false;
+            if (otherBox != this && otherBox instanceof Box2d){
+                if (otherBox.bottomRight.x <= this.topLeft.x ||
+                    otherBox.topLeft.x >= this.bottomRight.x ||
+                    otherBox.bottomRight.y <= this.topLeft.y ||
+                    otherBox.topLeft.y >= this.bottomRight.y) {
+                        isOverlapping = true; 
+                    }
+            }
+            
+            return !isOverlapping;
+        }
+    }
+    var stage  = {
+        color: "#057905",
+        width: 1000,
+        height: 275,
+        x: 0,
+        y: c.height - 275,
+        render: function () {
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.width, this.height)
+        },
+        updateBounds: function() {
+            var topLeft = new Vector2d(this.x,this.y)
+            var bottomRight = new Vector2d(this.x + this.width,this.y + this.height)
+            this.bounds = new Box2d(topLeft, bottomRight)
+        }
+    }
     class Controller {
-        moveUp;
-        moveDown;
-        moveLeft;
-        moveRight;
-        constructor (upKey, downKey, leftKey, rightKey){
+        constructor(upKey, downKey, leftKey, rightKey) {
             this.moveUp = upKey;
             this.moveDown = downKey;
             this.moveLeft = leftKey;
             this.moveRight = rightKey;
         }
     }
-    var player1Controls = new Controller("w","s","a","d")   
-    var player2Controls = new Controller("ArrowUp","ArrowDown","ArrowLeft","ArrowRight")
+    var player1Controls = new Controller("w", "s", "a", "d")
+    var player2Controls = new Controller("ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight")
     class Player {
-        color;
-        width;
-        height;
-        x;
-        y;
-        controls; 
-        constructor (color, width, height, x, y, controller){
+        constructor(color, width, height, x, y, controller, ) {
             this.color = color;
             this.width = width;
             this.height = height;
             this.x = x;
             this.y = y;
-            this.controls = controller; 
+            this.controls = controller;
+            this.updateBounds();
         }
-        render (){
+        updateBounds() {
+            var topLeft = new Vector2d(this.x,this.y)
+            var bottomRight = new Vector2d(this.x + this.width,this.y + this.height)
+            this.bounds = new Box2d(topLeft, bottomRight)
+        }
+        render() {
             ctx.fillStyle = this.color;
             ctx.fillRect(this.x, this.y, this.width, this.height)
         }
-        updateInput (){
-            if(inputState[this.controls.moveRight] == true){
+        updateInput() {
+            if (inputState[this.controls.moveRight] == true) {
                 this.x += vx
             }
-            if(inputState[this.controls.moveUp] == true){
+            if (inputState[this.controls.moveUp] == true) {
                 this.y -= vy
             }
-            if(inputState[this.controls.moveLeft] == true){
+            if (inputState[this.controls.moveLeft] == true) {
                 this.x += -vx
             }
-            if(inputState[this.controls.moveDown] == true){
+            if (inputState[this.controls.moveDown] == true) {
                 this.y += vy
             }
         }
-        init (){
-            this.x = c.width/2 - this.width/2;
-            this.y = c.height/2 - this.height/2;  
+        init() {
+            this.x = c.width / 2 - this.width / 2;
+            this.y = c.height / 2 - this.height / 2;
             console.log(this.x, this.y);
         }
     }
-    var player1 =  new Player("#ff0000",100, 300,0,0,player1Controls);
-    // var player2 =  new Player("#0000ff",100, 300,0,0,player2Controls);
-    // {
-    //     color: "#ff0000",
-    //     width: 100,
-    //     height: 300,
-    //     x: 0,
-    //     y: 0, 
-    //     render: function(){
-    //         ctx.fillStyle = this.color;
-    //         ctx.fillRect(this.x, this.y, this.width, this.height)
-    //     }, 
-    //     updateInput: function(){
-    //         if(inputState.d == true){
-    //             this.x += vx
-    //         }
-    //         if(inputState.w == true){
-    //             this.y -= vy
-    //         }
-    //         if(inputState.a == true){
-    //             this.x += -vx
-    //         }
-    //         if(inputState.s == true){
-    //             this.y += vy
-    //         }
-    //     },  
-    //     init: function(){
-    //         this.x = c.width/2 - this.width/2;
-    //         this.y = c.height/2 - this.height/2; 
-    //     }, 
-    // }
-    // var player2 = {
-    //     color: "#0000ff",
-    //     width: 100,
-    //     height: 300,
-    //     x: 0,
-    //     y: 0,
-    //     render: function(){
-    //         ctx.fillStyle = this.color;
-    //         ctx.fillRect(this.x, this.y, this.width, this.height)
-    //     },
-    //     updateInput: function(){
-    //         if(inputState.ArrowRight == true){
-    //             this.x += vx
-    //         }
-    //         if(inputState.ArrowUp == true){
-    //             this.y -= vy
-    //         }
-    //         if(inputState.ArrowLeft == true){
-    //             this.x += -vx
-    //         }
-    //         if(inputState.ArrowDown == true){
-    //             this.y += vy
-    //         }
-    //     }, 
-    //     init: function(){
-    //         this.x = c.width/2 + this.width/2;
-    //         this.y = c.height/2 - this.height/2; 
-    //         console.log(this.x, this.y);
-    //     }
-    // }
+    var characterDimensions = new Vector2d(100,300);
+    var spawnLocations = [
+        new Vector2d(c.width/2 - characterDimensions.x/2, c.height/2 - characterDimensions.y/2),
+        new Vector2d(c.width/2 + characterDimensions.x/2, c.height/2 - characterDimensions.y/2),
+    ]
+    var player1 = new Player("#ff0000", 
+                            characterDimensions.x, 
+                            characterDimensions.y, 
+                            spawnLocations[0].x, 
+                            spawnLocations[0].y, 
+                            player1Controls);
+    var player2 = new Player("#0000ff", 
+                            characterDimensions.x, 
+                            characterDimensions.y, 
+                            spawnLocations[1].x, 
+                            spawnLocations[1].y, 
+                            player2Controls);
+    
     var inputState = {
-        w:false, 
-        a:false, 
-        s:false, 
-        d:false, 
+        w: false,
+        a: false,
+        s: false,
+        d: false,
     }
-    // ctx.beginPath();
-    // ctx.arc(95, 50, 40,0,2*Math.PI);
-    // ctx.stroke();
-    // var img = document.getElementById("picture")
-    // ctx.drawImage(img, 0, 0);
-    // var width = window.innerWidth;
-    // var height = window.innerHeight;
-    // ctx.fillRect(0, 0, width, height)
-    // ctx.fillStyle = "#ff0000"
-    // ctx.fillRect(56, 67, 100, 300)
-    // ctx.clearRect(0,0,c.width,c.height)
     function init() {
         game.init();
-        player1.init();
-        player2.init();
-        window.addEventListener("keydown", function(event){
+        window.addEventListener("keydown", function (event) {
             inputState[event.key] = true;
         });
-        window.addEventListener("keyup", function(event){
+        window.addEventListener("keyup", function (event) {
             inputState[event.key] = false;
         });
         window.requestAnimationFrame(update)
@@ -197,27 +190,35 @@ window.onload = function () {
         player1.updateInput();
         player2.updateInput();
         ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
-        if (player1.y+player1.height>c.height-50){
+        if (player1.y + player1.height > c.height - 50) {
             game.player2Score += 1;
         }
-        if (player2.y+player2.height>c.height-50){
+        if (player2.y + player2.height > c.height - 50) {
             game.player1Score += 1;
         }
+        stage.updateBounds();
+        player1.updateBounds();
+        // player1.bounds.containsPoint(spawnLocations[0]);
+        player2.updateBounds();
+        // player2.bounds.containsPoint(spawnLocations[0]);
+        console.log("player1 overlaps stage: "  + player1.bounds.overlapsBox(stage.bounds));
+        console.log("player1 overlaps player2, lewd: "  + player1.bounds.overlapsBox(player2.bounds));
         var width = window.innerWidth;
         var height = window.innerHeight;
-        background.render(); 
+        background.render();
+        stage.render();
         player1.render();
         player2.render();
         game.getRemainingTime();
         game.endGameCheck();
-        if (game.isOver){
+        if (game.isOver) {
             ctx.font = "100px Helvetica";
             ctx.fillStyle = "Yellow";
             ctx.textAlign = "center";
-            ctx.fillText ("Game Over", c.width/2, c.height/2);
+            ctx.fillText("Game Over", c.width / 2, c.height / 2);
 
         }
-        console.log(ctx.width);
+        console.log(c.width);
         game.updateUI();
         window.requestAnimationFrame(update)
     }
