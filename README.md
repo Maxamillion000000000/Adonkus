@@ -5,3 +5,4 @@
 3. Bounding Box
 4. Gravity
 5. Collision
+6. arbitrage space x laplassian information scaling to LoDs
