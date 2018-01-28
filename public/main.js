@@ -64,6 +64,7 @@ window.onload = function () {
             this.topLeft = topLeft;
             this.bottomRight = bottomRight;
             this.isColliding = false;
+            this.collisionPosition; 
         }
         containsPoint(point) {
             var isColliding = false;
@@ -82,6 +83,7 @@ window.onload = function () {
                     otherBox.bottomRight.y <= this.topLeft.y ||
                     otherBox.topLeft.y >= this.bottomRight.y) {
                     this.isColliding = true;
+                    this.collisionPosition = new Vector2d(this.topLeft.x, this.topLeft.y);
                 }
             }
 
@@ -89,11 +91,12 @@ window.onload = function () {
             return this.isColliding;
         }
     }
+    var characterDimensions = new Vector2d(100, 300);
     var stage = {
         color: "#057905",
-        width: 1000,
+        width: c.width-3*characterDimensions.x,
         height: 275,
-        x: 0,
+        x: 1.5*characterDimensions.x,
         y: c.height - 275,
         render: function () {
             ctx.fillStyle = this.color;
@@ -126,6 +129,7 @@ window.onload = function () {
             this.updateBounds();
             this.debugColor = "Yellow";
             this.collisionHelper = false;
+            this.previousPosition = new Vector2d(null, null);
         }
         updateBounds() {
             var topLeft = new Vector2d(this.x, this.y)
@@ -134,7 +138,7 @@ window.onload = function () {
         }
         render() {
             if (this.bounds.isColliding && this.collisionHelper) {
-                ctx.fillstyle = this.debugColor;
+                ctx.fillStyle = this.debugColor;
             }
             else {
                 ctx.fillStyle = this.color;
@@ -155,6 +159,14 @@ window.onload = function () {
                 this.y += vy
             }
         }
+        collisionResponse() {
+            if (this.bounds.isColliding && this.bounds.topLeft.x == this.bounds.collisionPosition.x){
+                this.x = this.previousPosition.x;
+            }
+            if (this.bounds.isColliding && this.bounds.topLeft.y == this.bounds.collisionPosition.y){
+                this.y = this.previousPosition.y;
+            }
+        }
         init() {
             this.x = c.width / 2 - this.width / 2;
             this.y = c.height / 2 - this.height / 2;
@@ -164,7 +176,6 @@ window.onload = function () {
             this.collisionHelper = isOn;
         }
     }
-    var characterDimensions = new Vector2d(100, 300);
     var spawnLocations = [
         new Vector2d(c.width / 2 - characterDimensions.x / 2, c.height / 2 - characterDimensions.y / 2),
         new Vector2d(c.width / 2 + characterDimensions.x / 2, c.height / 2 - characterDimensions.y / 2),
@@ -219,7 +230,10 @@ window.onload = function () {
         player1.bounds.overlapsBox(stage.bounds);
         player1.bounds.overlapsBox(player2.bounds);
         player2.bounds.overlapsBox(stage.bounds);
-        player2.bounds.overlapsBox(player2.bounds);
+        player2.bounds.overlapsBox(player1.bounds);
+        player1.collisionResponse();
+        player2.collisionResponse();
+
         var width = window.innerWidth;
         var height = window.innerHeight;
         background.render();
@@ -235,6 +249,8 @@ window.onload = function () {
             ctx.fillText("Game Over", c.width / 2, c.height / 2);
 
         }
+        player1.previousPosition = new Vector2d(player1.x,player1.y);
+
         console.log(c.width);
         game.updateUI();
         window.requestAnimationFrame(update)
