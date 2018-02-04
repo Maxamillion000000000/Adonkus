@@ -2,6 +2,7 @@ window.onload = function () {
     var c = document.getElementById("canvas");
     c.width = window.innerWidth;
     c.height = window.innerHeight;
+    var boxes = [];
     var ctx = c.getContext("2d");
     var x = 40;
     var y = 50;
@@ -64,37 +65,41 @@ window.onload = function () {
             this.topLeft = topLeft;
             this.bottomRight = bottomRight;
             this.isColliding = false;
+            boxes.push(this);
         }
         containsPoint(point) {
             var isColliding = false;
-            if (point.x >= this.topLeft.x && point.x <= this.bottomRight.x && point.y >= this.topLeft.y && point.y <= this.bottomRight.y) {
+            if (point.x >= this.topLeft.x && point.x <= this.bottomRight.x && point.y >= this.topLeft.y && point.y <= this.bottomRight.y) { //doublecheck logic
                 isColliding = true
             }
             console.log("contains point( " + point.x + ", " + point.y + ") " + isColliding)
             return isColliding;
         }
 
-        overlapsBox(otherBox) {
-            this.isColliding = false;
-            if (otherBox != this && otherBox instanceof Box2d) {
-                if (otherBox.bottomRight.x <= this.topLeft.x ||
-                    otherBox.topLeft.x >= this.bottomRight.x ||
-                    otherBox.bottomRight.y <= this.topLeft.y ||
-                    otherBox.topLeft.y >= this.bottomRight.y) {
-                    this.isColliding = true;
-                }
+        overlapsBox() {
+            var overlapsAny = false;
+            var index = boxes.indexOf(this);
+            for (var i = 0; i < boxes.length; i++) {
+                if(index === i) continue;
+                var box = boxes[i];
+                if (box !== this &&
+                    box.bottomRight.x >= this.topLeft.x &&
+                    box.topLeft.x <= this.bottomRight.x &&
+                    box.bottomRight.y >= this.topLeft.y &&
+                    box.topLeft.y <= this.bottomRight.y) {   //always true?
+                        overlapsAny = true;
+                    }
             }
-
-            this.isColliding = !this.isColliding;
-            return this.isColliding;
+            this.isColliding = overlapsAny;
         }
     }
     var stage = {
         color: "#057905",
-        width: 1000,
+        width: c.width - 100,
         height: 275,
-        x: 0,
+        x: 50,
         y: c.height - 275,
+        debugColor: "yellow",
         render: function () {
             ctx.fillStyle = this.color;
             ctx.fillRect(this.x, this.y, this.width, this.height)
@@ -124,7 +129,7 @@ window.onload = function () {
             this.y = y;
             this.controls = controller;
             this.updateBounds();
-            this.debugColor = "Yellow";
+            this.debugColor = "#ffff00";
             this.collisionHelper = false;
         }
         updateBounds() {
@@ -134,7 +139,7 @@ window.onload = function () {
         }
         render() {
             if (this.bounds.isColliding && this.collisionHelper) {
-                ctx.fillstyle = this.debugColor;
+                ctx.fillStyle = "Yellow"; //commenting out turns boxes green
             }
             else {
                 ctx.fillStyle = this.color;
@@ -161,7 +166,7 @@ window.onload = function () {
             console.log(this.x, this.y);
         }
         setCollisionHelper(isOn) {
-            this.collisionHelper = isOn;
+            this.collisionHelper = isOn; //commenting this out breaks the game
         }
     }
     var characterDimensions = new Vector2d(100, 300);
@@ -213,13 +218,11 @@ window.onload = function () {
         }
         stage.updateBounds();
         player1.updateBounds();
-        // player1.bounds.containsPoint(spawnLocations[0]);
         player2.updateBounds();
-        // player2.bounds.containsPoint(spawnLocations[0]);
-        player1.bounds.overlapsBox(stage.bounds);
         player1.bounds.overlapsBox(player2.bounds);
+        player1.bounds.overlapsBox(stage.bounds);
+        player2.bounds.overlapsBox(player1.bounds);
         player2.bounds.overlapsBox(stage.bounds);
-        player2.bounds.overlapsBox(player2.bounds);
         var width = window.innerWidth;
         var height = window.innerHeight;
         background.render();

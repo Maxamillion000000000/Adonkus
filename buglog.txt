@@ -1,0 +1,4 @@
+Bug 1 test color is always testing true so players are always yellow
+
+Bug 2 if test color were not testing true players would be green
+1.23.17
