@@ -8,4 +8,4 @@
 6. abstract GameObject update into game
 7. Gravity 
 8. jumping
-9. arbitrage space x laplassian information scaling to LoDs
+9. arbitrage space x laplassian information scaling to LoDs, yo
