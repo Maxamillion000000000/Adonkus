@@ -10,6 +10,7 @@ window.onload = function () {
     var vx = 3;
     var vy = 3;
     var game = {
+        collisionObjects: [],
         player1Score: 0,
         player2Score: 0,
         remainingTime: 60000,
@@ -42,9 +43,23 @@ window.onload = function () {
             ctx.fillText("Player 2: " + this.player2Score, 10, 10 + 60);
             ctx.fillStyle = "White";
             ctx.fillText("T-Minus: " + Math.floor(this.remainingTime / 1000), c.width / 2, 10 + 30);
+        },
+        updatePhysics: function(){
+            this.collisionObjects.forEach(obj => {
+                obj.updateBounds();
+            })
+            this.collisionObjects.forEach(obj => {
+                var collidesAny = [];
+                this.collisionObjects.forEach(otherObj => {
+                    collidesAny.push(obj.bounds.overlapsBox(otherObj.bounds))
+                });
+                obj.bounds.isColliding = collidesAny.filter(result => result === true).length > 0;
+            })
+            this.collisionObjects.forEach(obj => obj.collisionResponse())
+    
         }
     }
-       
+
     var background = {
         color: "#000000",
         width: c.width,
@@ -80,31 +95,34 @@ window.onload = function () {
         }
 
         overlapsBox(otherBox) {
-            this.isColliding = false;
+            // var overlapsAny = this.isColliding;
+            // this.isColliding = false;
+            var isColliding = false;
             if (otherBox != this && otherBox instanceof Box2d) {
-                if (otherBox.bottomRight.x <= this.topLeft.x ||
-                    otherBox.topLeft.x >= this.bottomRight.x ||
-                    otherBox.bottomRight.y <= this.topLeft.y ||
-                    otherBox.topLeft.y >= this.bottomRight.y) {
-                    this.isColliding = true;
+                if (otherBox.bottomRight.x >= this.topLeft.x &&
+                    otherBox.topLeft.x <= this.bottomRight.x &&
+                    otherBox.bottomRight.y >= this.topLeft.y &&
+                    otherBox.topLeft.y <= this.bottomRight.y) {
+                    // this.isColliding = true;
+                    isColliding = true;
                     this.collisionPosition = new Vector2d(this.topLeft.x, this.topLeft.y);
                 }
             }
-            this.isColliding = overlapsAny;
+            return isColliding;
         }
     }
     var characterDimensions = new Vector2d(100, 300);
-    var stageConfig =  {
+    var stageConfig = {
         color: "#057905",
-        width: c.width-3*characterDimensions.x,
+        width: c.width - 3 * characterDimensions.x,
         height: 275,
-        x: 1.5*characterDimensions.x,
+        x: 1.5 * characterDimensions.x,
         y: c.height - 275,
         previousPosition: new Vector2d(null, null),
-        
+
     }
     class Controller {
-        
+
         constructor(upKey, downKey, leftKey, rightKey) {
             this.moveUp = upKey;
             this.moveDown = downKey;
@@ -125,6 +143,7 @@ window.onload = function () {
             this.debugColor = "#ffff00";
             this.collisionHelper = false;
             this.previousPosition = new Vector2d(null, null);
+            game.collisionObjects.push(this);
         }
         updateBounds() {
             var topLeft = new Vector2d(this.x, this.y)
@@ -141,10 +160,10 @@ window.onload = function () {
             ctx.fillRect(this.x, this.y, this.width, this.height)
         }
         collisionResponse() {
-            if (this.bounds.isColliding && this.bounds.topLeft.x == this.bounds.collisionPosition.x){
+            if (this.bounds.isColliding && this.bounds.topLeft.x == this.bounds.collisionPosition.x) {
                 this.x = this.previousPosition.x;
             }
-            if (this.bounds.isColliding && this.bounds.topLeft.y == this.bounds.collisionPosition.y){
+            if (this.bounds.isColliding && this.bounds.topLeft.y == this.bounds.collisionPosition.y) {
                 this.y = this.previousPosition.y;
             }
         }
@@ -154,7 +173,7 @@ window.onload = function () {
             console.log(this.x, this.y);
         }
         setCollisionHelper(isOn) {
-            this.collisionHelper = isOn; //commenting this out breaks the game
+            this.collisionHelper = isOn;
         }
     }
     class Player extends GameObject {
@@ -179,8 +198,8 @@ window.onload = function () {
     }
 
     var spawnLocations = [
-        new Vector2d(c.width / 2 - characterDimensions.x / 2, c.height / 2 - characterDimensions.y / 2),
-        new Vector2d(c.width / 2 + characterDimensions.x / 2, c.height / 2 - characterDimensions.y / 2),
+        new Vector2d(c.width / 2 - characterDimensions.x, c.height / 2 - characterDimensions.y / 2),
+        new Vector2d(c.width / 2 + characterDimensions.x, c.height / 2 - characterDimensions.y / 2),
     ]
     var stage;
     var player1;
@@ -196,10 +215,10 @@ window.onload = function () {
         game.init();
         stage = new GameObject(
             stageConfig.color,
-             stageConfig.width, 
-             stageConfig.height, 
-             stageConfig.x,
-              stageConfig.y)
+            stageConfig.width,
+            stageConfig.height,
+            stageConfig.x,
+            stageConfig.y)
         player1 = new Player(
             "#ff0000",
             characterDimensions.x,
@@ -214,7 +233,10 @@ window.onload = function () {
             spawnLocations[1].x,
             spawnLocations[1].y,
             player2Controls);
-        stage.setCollisionHelper(true);           
+        stage.name = "Stage";
+        player1.name = "Player 1";
+        player2.name = "Player 2";
+        stage.setCollisionHelper(true);
         player1.setCollisionHelper(true);
         player2.setCollisionHelper(true);
         window.addEventListener("keydown", function (event) {
@@ -236,22 +258,7 @@ window.onload = function () {
         if (player2.y + player2.height > c.height - 50) {
             game.player1Score += 1;
         }
-        stage.updateBounds();
-        player1.updateBounds();
-        player2.updateBounds();
-        // player2.bounds.containsPoint(spawnLocations[0]);
-        stage.bounds.overlapsBox(player1.bounds);
-        stage.bounds.overlapsBox(player2.bounds);
-        player1.bounds.overlapsBox(stage.bounds);
-        player1.bounds.overlapsBox(player2.bounds);
-        player1.bounds.overlapsBox(stage.bounds);
-        player2.bounds.overlapsBox(player1.bounds);
-        player2.bounds.overlapsBox(stage.bounds);
-        player2.bounds.overlapsBox(player1.bounds);
-        stage.collisionResponse();
-        player1.collisionResponse();
-        player2.collisionResponse();
-
+        game.updatePhysics();
         var width = window.innerWidth;
         var height = window.innerHeight;
         background.render();
@@ -267,9 +274,9 @@ window.onload = function () {
             ctx.fillText("Game Over", c.width / 2, c.height / 2);
 
         }
-        player1.previousPosition = new Vector2d(player1.x,player1.y);
-        player2.previousPosition = new Vector2d(player2.x,player2.y);
-        stage.previousPosition = new Vector2d(stage.x,stage.y);
+        player1.previousPosition = new Vector2d(player1.x, player1.y);
+        player2.previousPosition = new Vector2d(player2.x, player2.y);
+        stage.previousPosition = new Vector2d(stage.x, stage.y);
         console.log(c.width);
         game.updateUI();
         window.requestAnimationFrame(update)
