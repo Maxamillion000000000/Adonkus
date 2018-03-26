@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.16.2",
+    "matter-js": "^0.14.1",
     "webpack": "^4.2.0"
   },
   "devDependencies": {
