@@ -1,26 +1,139 @@
-import { Engine, Render, World, Bodies } from 'matter-js';
-
+import { Engine, Render, World, Bodies, Body } from 'matter-js';
+var hello = "";
+const options = {
+    width: 800,
+    height: 600,
+//     pixelRatio: 1,
+    background: '#fff',
+//     wireframeBackground: '#222',
+//     hasBounds: false,
+    enabled: true,
+//     wireframes: true,
+//     showSleeping: true,
+//     showDebug: true,
+//     showBroadphase: false,
+//     showBounds: false,
+//     showVelocity: false,
+//     showCollisions: false,
+//     showSeparations: false,
+//     showAxes: false,
+//     showPositions: false,
+//     showAngleIndicator: false,
+//     showIds: false,
+//     showShadows: false,
+//     showVertexNumbers: false,
+//     showConvexHulls: false,
+//     showInternalEdges: false,
+//     showMousePosition: true
+}
 const engine = Engine.create();
 const render = Render.create({
     element: document.body,
-    engine: engine
+    engine: engine,
+    options: {
+        background: 'box.png'
+    }
 })
 
 let boxA = Bodies.rectangle(400, 200, 80, 80, {
     render: {
         sprite: {
-            texture: '2.png'
+            texture: './2.jpg',
+            xScale: 1,
+            yScale: 1,
         }
     }
 });
+
 let boxB = Bodies.rectangle(450, 50, 80, 80, {
     render: {
         sprite: {
-            texture: ''
+            texture: 'box.png',
+            xScale: 1,
+            yScale: 1,
         }
     }
 });
-let ground = Bodies.rectangle(400, 610, 810, 60, { isStatic: true});
+
+function moveRight(body) {
+    if (inputState.d){
+        Body.applyForce(
+            body,
+            {
+                x: body.position.x,
+                y: body.position.y,
+            },
+            {
+                x: 0.1,
+                y: 0,
+            },
+        )
+    }
+};
+function moveLeft(body) {
+    if (inputState.a){
+        Body.applyForce(
+            body,
+            {
+                x: body.position.x,
+                y: body.position.y,
+            },
+            {
+                x: -0.1,
+                y: 0,
+            },
+        )
+    }
+};
+function moveUp(body) {
+    if (inputState.w ){
+        Body.applyForce(
+            body,
+            {
+                x: body.position.x,
+                y: body.position.y,
+            },
+            {
+                x: 0,
+                y: -0.2,
+            },
+        )
+    }
+};
+function moveDown(body) {
+    if (inputState.s){
+        Body.applyForce(
+            body,
+            {
+                x: body.position.x,
+                y: body.position.y,
+            },
+            {
+                x: 0,
+                y: 0.2,
+            },
+        )
+    }
+};
+
+var inputState = {
+    w: false,
+    a: false,
+    s: false,
+    d: false,
+}
+
+window.addEventListener("keydown", function (event) {
+    inputState[event.key] = true;
+    moveRight(boxA);
+    moveLeft(boxA)
+    moveUp(boxA)
+    moveDown(boxA)
+});
+window.addEventListener("keyup", function (event) {
+    inputState[event.key] = false;
+});
+let ground = Bodies.rectangle(300, 610, 810, 60, { isStatic: true });
 
 World.add(engine.world, [boxA, boxB, ground]);
 Engine.run(engine);
@@ -85,7 +198,7 @@ Render.run(render);
 //                 obj.bounds.isColliding = collidesAny.filter(result => result === true).length > 0;
 //             })
 //             this.collisionObjects.forEach(obj => obj.collisionResponse())
-    
+
 //         }
 //     }
 

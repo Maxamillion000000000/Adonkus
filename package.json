@@ -4,6 +4,8 @@
   "description": "babby's first server",
   "main": "server.js",
   "scripts": {
+    "start": "nodemon ./server.js --exec webpack",
+    "build": "webpack", 
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Someguy",
